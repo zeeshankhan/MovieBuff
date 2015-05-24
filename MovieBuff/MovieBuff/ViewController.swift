@@ -20,7 +20,6 @@ class ViewController: UIViewController, DataManagerDelegate, ImageDownloadDelega
     // MARK:- View lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-
         // To show login screen
 //        NSUserDefaults.standardUserDefaults().setBool(false, forKey: "login")
 
@@ -34,7 +33,10 @@ class ViewController: UIViewController, DataManagerDelegate, ImageDownloadDelega
         self.queueImg?.maxConcurrentOperationCount = 10
         
         self.searchBar?.text = "Iron Man"
-        self.dm?.getMoviesList(self.searchBar!.text)
+//        self.dm?.getMoviesList(self.searchBar!.text)
+        
+//        self.dm?.testPOST()
+        
 //        self.dm?.getMoviesList("Superman")
 //        self.dm?.getMoviesList("Xmen")
 //        self.dm?.getMoviesList("Thor")
@@ -46,6 +48,9 @@ class ViewController: UIViewController, DataManagerDelegate, ImageDownloadDelega
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
         self.navigationController?.navigationBar.addSubview(self.searchBar!)
+
+//        let indexpath = self.tblMovieList.indexPathsForSelectedRows()
+//        self.tblMovieList.deselectRowAtIndexPath(indexpath, animated: true)
     }
     
     override func viewDidAppear(animated: Bool) {
@@ -71,8 +76,8 @@ class ViewController: UIViewController, DataManagerDelegate, ImageDownloadDelega
     }
     
     override func didReceiveMemoryWarning() {
+        self.queueImg!.cancelAllOperations()
         super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
 
     //MARK:- Search Bar
@@ -105,20 +110,10 @@ class ViewController: UIViewController, DataManagerDelegate, ImageDownloadDelega
     }
 
     
-
     //MARK:- Table View
     
-    func numberOfSectionInTableView(tableView: UITableView) -> Int {
-        return 1
-    }
-    
     func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if self.arrMovies != nil {
-            return self.arrMovies!.count
-        }
-        else {
-            return 0
-        }
+        return self.arrMovies!.count
     }
     
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
@@ -167,7 +162,6 @@ class ViewController: UIViewController, DataManagerDelegate, ImageDownloadDelega
     func loadImagesForOnscreenRows() {
 
         let visiblePaths = self.tblMovieList.indexPathsForVisibleRows()
-        let indexPath: NSIndexPath?
         for indexPath in visiblePaths! {
             let m = self.arrMovies?.objectAtIndex(indexPath.row) as! MovieDetails
             if m.poster == nil {
@@ -189,5 +183,7 @@ class ViewController: UIViewController, DataManagerDelegate, ImageDownloadDelega
         self.loadImagesForOnscreenRows()
     }
 
+    //MARK:- Detail VC
+    
 }
 

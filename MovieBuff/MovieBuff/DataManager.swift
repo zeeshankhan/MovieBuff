@@ -27,30 +27,15 @@ class DataManager: NSObject, DMCallBack {
     
     func getDataFromServer(method: Method, url: String, params: NSDictionary) {
     
-        NetworkManager.sharedInstance.requestForData(method, url: url, param: params) { (response, error) -> Void in
+        NetworkManager.sharedInstance.requestForData(method, url: url, param: params) { response, error -> Void in
             
-            let res = response as? NSData
-            let jsonObject: AnyObject?
-            
-            if response != nil {
-                
-                jsonObject = NSJSONSerialization.JSONObjectWithData(res!, options: .AllowFragments, error: nil)
-                self.checkForErrorOnResponse(jsonObject)
+            if (response != nil && self.dataDelegate != nil) {
+                self.dataReceived(response!)
             }
-            else {
-                let strRes = NSString(data: res!, encoding: NSUTF8StringEncoding)
-                println(strRes)
-            }
-            
         }
         
     }
     
-    func checkForErrorOnResponse(data: AnyObject?) {
-        if (data != nil && self.dataDelegate != nil) {
-            self.dataReceived(data!)
-        }
-    }
     
     func dataReceived(data: AnyObject?) {
         println("Data manager")
@@ -66,12 +51,41 @@ class MovieListDM : DataManager {
         self.getDataFromServer(.GET, url: strBasePath, params: dic)
     }
     
+    func testPOST() {
+        let dic: NSDictionary = NSDictionary(objects: ["Zeeshan Khan", "bar"], forKeys: ["title", "body"])
+        let strBasePath = "http://jsonplaceholder.typicode.com/posts"
+        self.getDataFromServer(.POST, url: strBasePath, params: dic)
+    }
+    
     override func dataReceived(data: AnyObject?) {
         if (data != nil && self.dataDelegate != nil) {
-            self.dataDelegate?.refreshedList!(MovieDetails.movieList(data!))
+            if data!.isKindOfClass(NSArray) {
+                self.dataDelegate?.refreshedList!(MovieDetails.movieList(data!))
+            }
+            else {
+                println("Data format is different than expected.")
+            }
         }
     }
 }
 
-
+class MovieDetailDM: DataManager {
+    
+    func getMovieDetail(movieId: String) {
+        let dic: NSDictionary = NSDictionary(objects: [movieId, "S"], forKeys: ["idIMDB", "actors"])
+        let strBasePath = "http://www.myapifilms.com/imdb?token=3962c3d1-e56d-40fd-b392-3b03bc621454"
+        self.getDataFromServer(.GET, url: strBasePath, params: dic)
+    }
+    
+    override func dataReceived(data: AnyObject?) {
+        if (data != nil && self.dataDelegate != nil) {
+            if data!.isKindOfClass(NSArray) {
+                self.dataDelegate?.refreshDetailWithResponse!(data as? NSDictionary)
+            }
+            else {
+                println("Data format is different than expected.")
+            }
+        }
+    }
+}
 

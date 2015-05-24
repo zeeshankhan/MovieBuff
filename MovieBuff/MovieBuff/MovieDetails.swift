@@ -20,7 +20,6 @@ class MovieDetails {
     class func movieList(response: AnyObject) -> NSArray {
         var arr = NSMutableArray()
         let movies = response as! NSArray
-        var dic: NSDictionary?
         for dic in movies {
             arr.addObject(MovieDetails(movie: dic as! NSDictionary))
         }

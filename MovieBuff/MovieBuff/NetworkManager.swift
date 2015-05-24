@@ -13,7 +13,6 @@ public enum Method: String {
     case POST = "POST"
 }
 
-
 typealias NetworkRequestCompletionHandler = (response : AnyObject?, error : NSError?) -> Void
 
 class NetworkManager: NSObject {
@@ -53,12 +52,8 @@ class NetworkManager: NSObject {
 }
 
 extension NSString {
-    func escapeStr() -> (NSString) {
-        var escapeStr: NSString {
-            
-            return CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault,self,"[].",":/?&=;+!@#$()',*",CFStringConvertNSStringEncodingToEncoding(NSUTF8StringEncoding))
-        }
-        return escapeStr
+    var escapeStr: NSString {
+        return CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault,self,"[].",":/?&=;+!@#$()',*",CFStringConvertNSStringEncodingToEncoding(NSUTF8StringEncoding))
     }
 }
 
@@ -119,7 +114,7 @@ class NetworkRequest : NSOperation {
         params.enumerateKeysAndObjectsUsingBlock { (key, object, stop) -> Void in
             if object.isKindOfClass(NSString) {
                 let val = object as! NSString
-                stringParameters.addObject("\(key)=\(val.escapeStr())")
+                stringParameters.addObject("\(key)=\(val.escapeStr)")
             }
             else if object.isKindOfClass(NSNumber) {
                 stringParameters.addObject("\(key)=\(object)")
@@ -138,29 +133,77 @@ class NetworkRequest : NSOperation {
         let url = NSURL(string: strURL)
         
         let session = NSURLSession.sharedSession()
-        self.operationTask = session.dataTaskWithURL(url!, completionHandler: { (data: NSData!, urlResponse: NSURLResponse!, error: NSError!) -> Void in
+        self.operationTask = session.dataTaskWithURL(url!, completionHandler: { data, response, error -> Void in
             
-            self.operationResponse = (urlResponse as! NSHTTPURLResponse)
-            println("[Status Code]: \(self.operationResponse?.statusCode)");
-            
-            self.callCompletionBlock(data, error: error)
+            self.parseResponse(response, data: data, error: error)
         })
         
         self.operationTask!.resume()
         
     }
     
+    
     func POST() {
     
-        let session = NSURLSession.sharedSession()
-        let strBasePath = "http://www.myapifilms.com/imdb?token=3962c3d1-e56d-40fd-b392-3b03bc621454"
-        let strURL = strBasePath + self.address!
-        let url = NSURL(string: strURL)
-        var mutableURLRequest = NSMutableURLRequest(URL: url!)
-        mutableURLRequest.HTTPMethod = Method.POST.rawValue
-        //            println(se)
-        //        mutableURLRequest.HTTPMethod = method.rawValue
+        let url = NSURL(string: self.address!)
+        var request = NSMutableURLRequest(URL: url!)
+        request.HTTPMethod = Method.POST.rawValue
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        
+        var err: NSError?
+        request.HTTPBody = NSJSONSerialization.dataWithJSONObject(self.operationParameters!, options: nil, error: &err)
 
+        let session = NSURLSession.sharedSession()
+        self.operationTask = session.dataTaskWithRequest(request, completionHandler: {data, response, error -> Void in
+
+            self.parseResponse(response, data: data, error: error)
+        })
+        
+        self.operationTask!.resume()
+    }
+    
+    
+    func parseResponse(response: NSURLResponse!, data: NSData?, error: NSError?) {
+    
+        self.operationResponse = (response as! NSHTTPURLResponse)
+        println("[Status Code]: \(self.operationResponse?.statusCode)");
+//        println("Response: \(response)")
+        
+//        var strData = NSString(data: data!, encoding: NSUTF8StringEncoding)
+//        println("Body: \(strData)")
+
+        var err: NSError?
+        var json: AnyObject? = NSJSONSerialization.JSONObjectWithData(data!, options: .AllowFragments, error: &err)  //as? NSDictionary
+        
+        // Did the JSONObjectWithData constructor return an error? If so, log the error to the console
+        if(err != nil) {
+            println(err!.localizedDescription)
+            let jsonStr = NSString(data: data!, encoding: NSUTF8StringEncoding)
+            println("Error could not parse JSON: '\(jsonStr)'")
+            
+            self.callCompletionBlock(json, error: err)
+        }
+        else {
+            // The JSONObjectWithData constructor didn't return an error. But, we should still
+            // check and make sure that json has a value using optional binding.
+            if let parseJSON: AnyObject = json {
+                
+                // Okay, the parsedJSON is here, let's get the value for 'success' out of it
+//                var success = parseJSON["success"] as? Int
+//                println("Succes: \(success)")
+
+                self.callCompletionBlock(parseJSON, error: err)
+            }
+            else {
+                // Woa, okay the json object was nil, something went worng. Maybe the server isn't running?
+                let jsonStr = NSString(data: data!, encoding: NSUTF8StringEncoding)
+                println("Error could not parse JSON: \(jsonStr)")
+                
+                self.callCompletionBlock(data, error: error)
+
+            }
+        }
     }
     
     func callCompletionBlock(response: AnyObject?, error: NSError?) {
@@ -182,13 +225,5 @@ class NetworkRequest : NSOperation {
     }
     
 }
-
-
-
-
-
-
-
-
 
 
