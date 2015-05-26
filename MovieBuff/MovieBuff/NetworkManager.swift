@@ -130,6 +130,7 @@ class NetworkRequest : NSOperation {
     func GET() {
     
         let strURL = self.address! + "&" + self.parameterString()
+        println("URL: \(strURL)")
         let url = NSURL(string: strURL)
         
         let session = NSURLSession.sharedSession()
@@ -167,7 +168,7 @@ class NetworkRequest : NSOperation {
     func parseResponse(response: NSURLResponse!, data: NSData?, error: NSError?) {
     
         self.operationResponse = (response as! NSHTTPURLResponse)
-        println("[Status Code]: \(self.operationResponse?.statusCode)");
+//        println("[Status Code]: \(self.operationResponse?.statusCode)");
 //        println("Response: \(response)")
         
 //        var strData = NSString(data: data!, encoding: NSUTF8StringEncoding)

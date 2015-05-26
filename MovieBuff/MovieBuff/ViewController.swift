@@ -20,6 +20,7 @@ class ViewController: UIViewController, DataManagerDelegate, ImageDownloadDelega
     // MARK:- View lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        
         // To show login screen
 //        NSUserDefaults.standardUserDefaults().setBool(false, forKey: "login")
 
@@ -33,9 +34,7 @@ class ViewController: UIViewController, DataManagerDelegate, ImageDownloadDelega
         self.queueImg?.maxConcurrentOperationCount = 10
         
         self.searchBar?.text = "Iron Man"
-//        self.dm?.getMoviesList(self.searchBar!.text)
-        
-//        self.dm?.testPOST()
+        self.dm?.getMoviesList(self.searchBar!.text)
         
 //        self.dm?.getMoviesList("Superman")
 //        self.dm?.getMoviesList("Xmen")

@@ -19,8 +19,9 @@ class MovieDetails {
     
     class func movieList(response: AnyObject) -> NSArray {
         var arr = NSMutableArray()
-        let movies = response as! NSArray
-        for dic in movies {
+        let results = response.objectForKey("results") as! NSArray
+//        let movies = response as! NSArray
+        for dic in results {
             arr.addObject(MovieDetails(movie: dic as! NSDictionary))
         }
         return NSArray(array: arr)
@@ -33,8 +34,26 @@ class MovieDetails {
     
     func initailizeMovieProperties(dicInfo:NSDictionary) {
         self.title = dicInfo.objectForKey("title") as? String
-        self.posterURL = dicInfo.objectForKey("urlPoster") as? String
+        let poster_path = dicInfo.objectForKey("poster_path") as? String
+
+        let imgConfDic = self.config.objectForKey("images") as? NSDictionary
+        let imgBaseUrl = imgConfDic?.objectForKey("base_url") as? String
+        let logoSizes = imgConfDic?.objectForKey("logo_sizes") as? NSArray
+        let is92Exist = logoSizes?.indexOfObject("w92")
+        self.posterURL = self.config.objectForKey("images") as? String
     }
+    
+    var config: NSDictionary {
+        struct Static {
+            static var conf: NSDictionary?
+            static var onceToken: dispatch_once_t = 0
+        }
+        dispatch_once(&Static.onceToken, {() -> Void in
+            Static.conf = NSUserDefaults.standardUserDefaults().objectForKey("configuration") as? NSDictionary
+        })
+        return Static.conf!
+    }
+    
     
     func updateResponse(response: NSDictionary) {
     

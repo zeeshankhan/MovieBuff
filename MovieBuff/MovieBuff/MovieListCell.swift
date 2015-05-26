@@ -24,7 +24,11 @@ typealias MyClosure = (name: String) -> Void
 
 class MyClass {
     
+//    var x: String // = ""   // This is okay
+//    let y: String = ""   // This is a compiler error
+    
     func myfun(closure: MyClosure) {
+        
         println("Sexy sexy mujhe log bole, hi sexy hello sexy log bole... eeee")
         
         self.myfun { (name) -> Void in
