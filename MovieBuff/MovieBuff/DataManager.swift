@@ -8,141 +8,102 @@
 
 import Foundation
 
-@objc protocol DataManagerDelegate {
-    optional func refreshedList(arrItems: NSArray?) -> Void
-    optional func refreshDetailWithResponse(response: NSDictionary?) -> Void
-}
+typealias CompletionHandler = (response: AnyObject?) -> Void
 
-@objc protocol DMCallBack {
-    optional func dataReceived(data: AnyObject?) -> Void
-}
-
-class DataManager: NSObject, DMCallBack {
+class DataManager {
     
     let baseUrl = "http://api.themoviedb.org/"
     let apiVer = "3"
     let apiHolder = "?api_key="
     let APIKey = "433d425daefdff55eeb180ec5abfa479"
+    var imgBaseUrl: String = ""
     
-    
-    weak var dataDelegate: DataManagerDelegate?
-    
-    init(delegate: DataManagerDelegate) {
-        self.dataDelegate = delegate
-    }
-    
-    func getDataFromServer(method: Method, url: String, params: NSDictionary) {
-    
-        NetworkManager.sharedInstance.requestForData(method, url: url, param: params) { response, error -> Void in
-            
-            if (response != nil && self.dataDelegate != nil) {
-                self.dataReceived(response!)
-            }
+    class var sharedInstance: DataManager {
+        struct Static {
+            static var instance: DataManager?
+            static var onceToken: dispatch_once_t = 0
         }
-        
-    }
-    
-    //MARK:- Configuration
-    func getConfiguration() {
-        // http://api.themoviedb.org/3/configuration?api_key=433d425daefdff55eeb180ec5abfa479
-
-        let path = self.baseUrl + self.apiVer + "/configuration" + self.apiHolder + self.APIKey
-        self.getDataFromServer(.GET, url: path, params: NSDictionary())
-    }
-    
-    func dataReceived(data: AnyObject?) {
-        println("Setting Configuration")
-        NSUserDefaults.standardUserDefaults().setObject(data, forKey: "configuration")
-    }
-}
-
-class ConfigurationDM : DataManager, DataManagerDelegate {
-    
-//    class var sharedInstance: ConfigurationDM {
-//        struct Static {
-//            static var instance: ConfigurationDM?
-//            static var onceToken: dispatch_once_t = 0
-//        }
-//        dispatch_once(&Static.onceToken) {
-//            Static.instance = ConfigurationDM(delegate: self)
-//        }
-//        return Static.instance!
-//    }
-    
-   override func dataReceived(data: AnyObject?) {
-        if (data != nil && self.dataDelegate != nil) {
-            if data!.isKindOfClass(NSDictionary) {
-//                self.dataDelegate?.refreshedList!(MovieDetails.movieList(data!))
-            }
-            else {
-                println("Data format is different than expected.")
-            }
+        dispatch_once(&Static.onceToken) {
+            Static.instance = DataManager()
         }
-    }
-
-}
-
-
-class MovieListDM : DataManager {
-    
-    func getMoviesList(text: String) {
-        // http://api.themoviedb.org/3/search/movie?api_key=433d425daefdff55eeb180ec5abfa479&query=kick
-        let dic: NSDictionary = NSDictionary(objects: [text], forKeys: ["query"])
-        let path = self.baseUrl + self.apiVer + "/search/movie" + self.apiHolder + self.APIKey
-        self.getDataFromServer(.GET, url: path, params: dic)
+        return Static.instance!
     }
     
+    // For login / logout
     func testPOST() {
         let dic: NSDictionary = NSDictionary(objects: ["Zeeshan Khan", "bar"], forKeys: ["title", "body"])
         let strBasePath = "http://jsonplaceholder.typicode.com/posts"
-        self.getDataFromServer(.POST, url: strBasePath, params: dic)
+        NetworkManager.sharedInstance.requestForData(.POST, url: strBasePath, param: dic) { response, error -> Void in
+            NSUserDefaults.standardUserDefaults().setObject(response, forKey: "configuration")
+        }
     }
+
     
-    override func dataReceived(data: AnyObject?) {
-        if (data != nil && self.dataDelegate != nil) {
-            if data!.isKindOfClass(NSArray) {
-                self.dataDelegate?.refreshedList!(MovieDetails.movieList(data!))
-            }
-            else {
-                println("Data format is different than expected.")
+    // What is backdrop in API?
+    func getConfiguration() {
+        // http://api.themoviedb.org/3/configuration?api_key=433d425daefdff55eeb180ec5abfa479
+        // http://image.tmdb.org/t/p/w92//2DtPSyODKWXluIRV7PVru0SSzja.jpg
+
+        let path = self.baseUrl + self.apiVer + "/configuration" + self.apiHolder + self.APIKey
+        NetworkManager.sharedInstance.requestForData(.GET, url: path, param: NSDictionary()) { response, error -> Void in
+            
+            if (response != nil) {
+                NSUserDefaults.standardUserDefaults().setObject(response, forKey: "configuration")
+                let imgConfDic = response!.objectForKey("images") as? NSDictionary
+                if imgConfDic != nil {
+                    let baseUrl = imgConfDic?.objectForKey("base_url") as? String
+                    if baseUrl != nil {
+                        self.imgBaseUrl = baseUrl! + "w92"
+                        //                let logoSizes = imgConfDic?.objectForKey("logo_sizes") as? NSArray
+                        //                let is92Exist = logoSizes?.indexOfObject("w92")
+                    }
+                }
+                else {
+                    self.imgBaseUrl = "http://image.tmdb.org/t/p/w92"
+                }
+
             }
         }
     }
-}
 
-// First i need to fire is configuration
-// What is backdrop in API?
+    
+    func getMoviesList(text: String, completionBlock: CompletionHandler) {
+        // http://api.themoviedb.org/3/search/movie?api_key=433d425daefdff55eeb180ec5abfa479&query=kick
 
-// http://api.themoviedb.org/3/genre/movie/list?api_key=433d425daefdff55eeb180ec5abfa479&id=157336
-// http://image.tmdb.org/t/p/w92//2DtPSyODKWXluIRV7PVru0SSzja.jpg
-// http://api.themoviedb.org/3/search/collection?api_key=433d425daefdff55eeb180ec5abfa479&id=157336&query=kick
+        let dic: NSDictionary = NSDictionary(objects: [text], forKeys: ["query"])
+        let path = self.baseUrl + self.apiVer + "/search/movie" + self.apiHolder + self.APIKey
 
+        NetworkManager.sharedInstance.requestForData(.GET, url: path, param: dic) { response, error -> Void in
+            if response != nil {
+                completionBlock(response: MovieDetails.movieList(response!))
+            }
+        }
 
-class MovieDetailDM: DataManager {
+    }
+    
     
     func getMovieDetail(movieId: String) {
         // http://api.themoviedb.org/3/movie/157336?api_key=433d425daefdff55eeb180ec5abfa479
         
         let path = self.baseUrl + self.apiVer + "/movie/" + movieId + self.apiHolder + self.APIKey
-        self.getDataFromServer(.GET, url: path, params: NSDictionary())
+        NetworkManager.sharedInstance.requestForData(.GET, url: path, param: NSDictionary()) { response, error -> Void in
+        }
     }
-
+    
     func getMovieCasts(movieId: String) {
         // http://api.themoviedb.org/3/movie/157336/casts?api_key=433d425daefdff55eeb180ec5abfa479
         
         let path = self.baseUrl + self.apiVer + "/movie/" + movieId + "/casts" + self.apiHolder + self.APIKey
-        self.getDataFromServer(.GET, url: path, params: NSDictionary())
-    }
-    
-    override func dataReceived(data: AnyObject?) {
-        if (data != nil && self.dataDelegate != nil) {
-            if data!.isKindOfClass(NSDictionary) {
-                self.dataDelegate?.refreshDetailWithResponse!(data as? NSDictionary)
-            }
-            else {
-                println("Data format is different than expected.")
-            }
+        NetworkManager.sharedInstance.requestForData(.GET, url: path, param: NSDictionary()) { response, error -> Void in
         }
     }
+
 }
+
+
+
+// http://api.themoviedb.org/3/genre/movie/list?api_key=433d425daefdff55eeb180ec5abfa479&id=157336
+// http://api.themoviedb.org/3/search/collection?api_key=433d425daefdff55eeb180ec5abfa479&id=157336&query=kick
+
+
 

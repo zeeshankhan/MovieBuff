@@ -8,13 +8,11 @@
 
 import UIKit
 
-class ViewController: UIViewController, DataManagerDelegate, ImageDownloadDelegate, UISearchBarDelegate, UIScrollViewDelegate {
+class ViewController: UITableViewController, ImageDownloadDelegate, UISearchBarDelegate, UIScrollViewDelegate {
     
-    @IBOutlet weak var tblMovieList: UITableView!
     var searchBar: UISearchBar?
-
     var arrMovies: NSMutableArray?
-    var dm: MovieListDM?
+    var dm: DataManager?
     var queueImg: NSOperationQueue?
     
     // MARK:- View lifecycle
@@ -26,21 +24,47 @@ class ViewController: UIViewController, DataManagerDelegate, ImageDownloadDelega
 
         self.initializeSeachBar()
 
-        self.dm = MovieListDM(delegate: self)
+        self.dm = DataManager.sharedInstance
+        self.dm!.getConfiguration()
+
         self.arrMovies = NSMutableArray();
 
         self.queueImg = NSOperationQueue()
         self.queueImg?.name = "SearchListingQueue"
         self.queueImg?.maxConcurrentOperationCount = 10
-        
+
+        //WARNING:- test
         self.searchBar?.text = "Iron Man"
-        self.dm?.getMoviesList(self.searchBar!.text)
+        self.dm?.getMoviesList(self.searchBar!.text) { response -> Void in
+            self.arrMovies?.addObjectsFromArray(response! as! [MovieDetails])
+            self.tableView.reloadData()
+        }
         
-//        self.dm?.getMoviesList("Superman")
-//        self.dm?.getMoviesList("Xmen")
-//        self.dm?.getMoviesList("Thor")
-//        self.dm?.getMoviesList("Batman")
-//        self.dm?.getMoviesList("Spiderman")
+//        self.dm?.getMoviesList("Superman") { response -> Void in
+//            self.arrMovies?.addObjectsFromArray(response! as! [MovieDetails])
+//            self.tableView.reloadData()
+//        }
+//
+//        self.dm?.getMoviesList("Xmen") { response -> Void in
+//            self.arrMovies?.addObjectsFromArray(response! as! [MovieDetails])
+//            self.tableView.reloadData()
+//        }
+//
+//        self.dm?.getMoviesList("Thor") { response -> Void in
+//            self.arrMovies?.addObjectsFromArray(response! as! [MovieDetails])
+//            self.tableView.reloadData()
+//        }
+//
+//        self.dm?.getMoviesList("Batman") { response -> Void in
+//            self.arrMovies?.addObjectsFromArray(response! as! [MovieDetails])
+//            self.tableView.reloadData()
+//        }
+//
+//        self.dm?.getMoviesList("Spiderman") { response -> Void in
+//            self.arrMovies?.addObjectsFromArray(response! as! [MovieDetails])
+//            self.tableView.reloadData()
+//        }
+
         
     }
     
@@ -48,8 +72,8 @@ class ViewController: UIViewController, DataManagerDelegate, ImageDownloadDelega
         super.viewWillAppear(animated)
         self.navigationController?.navigationBar.addSubview(self.searchBar!)
 
-//        let indexpath = self.tblMovieList.indexPathsForSelectedRows()
-//        self.tblMovieList.deselectRowAtIndexPath(indexpath, animated: true)
+//        let indexpath = self.tableView.indexPathsForSelectedRows()
+//        self.tableView.deselectRowAtIndexPath(indexpath, animated: true)
     }
     
     override func viewDidAppear(animated: Bool) {
@@ -93,7 +117,11 @@ class ViewController: UIViewController, DataManagerDelegate, ImageDownloadDelega
     
     func searchBarSearchButtonClicked(searchBar: UISearchBar) {
         if count(searchBar.text) > 0 {
-            self.dm!.getMoviesList(searchBar.text)
+            self.dm?.getMoviesList(searchBar.text) { response -> Void in
+                self.arrMovies?.addObjectsFromArray(response! as! [MovieDetails])
+                self.tableView.reloadData()
+            }
+
             searchBar.resignFirstResponder()
         }
     }
@@ -102,20 +130,13 @@ class ViewController: UIViewController, DataManagerDelegate, ImageDownloadDelega
         searchBar.resignFirstResponder()
     }
     
-    //MARK:- DataManagerDelegate
-    func refreshedList(arrItems: NSArray?) {
-        self.arrMovies?.addObjectsFromArray(arrItems! as! [MovieDetails])
-        self.tblMovieList.reloadData()
-    }
-
-    
     //MARK:- Table View
     
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    override func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return self.arrMovies!.count
     }
     
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
+    override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCellWithIdentifier("MovieListCell", forIndexPath: indexPath) as! MovieListCell
         let m: MovieDetails = self.arrMovies!.objectAtIndex(indexPath.row) as! MovieDetails
         cell.lblName.text = m.title
@@ -127,10 +148,9 @@ class ViewController: UIViewController, DataManagerDelegate, ImageDownloadDelega
         else {
             cell.imgVThumb?.image = UIImage(named: "poster-dark.png");
             if tableView.dragging == false && tableView.decelerating == false {
-                self.startThumbDownload(m.posterURL!, path: indexPath)
+                self.startThumbDownload(m.posterURL, path: indexPath)
             }
         }
-        
         return cell
     }
     
@@ -148,7 +168,7 @@ class ViewController: UIViewController, DataManagerDelegate, ImageDownloadDelega
             m?.poster = image!
             self.arrMovies?.replaceObjectAtIndex(path.row, withObject: m!)
             
-            var oldCell = self.tblMovieList.cellForRowAtIndexPath(path) as! MovieListCell?
+            var oldCell = self.tableView.cellForRowAtIndexPath(path) as! MovieListCell?
             oldCell?.imgVThumb.image = image
         })
         
@@ -160,11 +180,11 @@ class ViewController: UIViewController, DataManagerDelegate, ImageDownloadDelega
     
     func loadImagesForOnscreenRows() {
 
-        let visiblePaths = self.tblMovieList.indexPathsForVisibleRows()
+        let visiblePaths = self.tableView.indexPathsForVisibleRows()
         for indexPath in visiblePaths! {
             let m = self.arrMovies?.objectAtIndex(indexPath.row) as! MovieDetails
             if m.poster == nil {
-                self.startThumbDownload(m.posterURL!, path: indexPath as! NSIndexPath)
+                self.startThumbDownload(m.posterURL, path: indexPath as! NSIndexPath)
             }
         }
         
@@ -172,17 +192,26 @@ class ViewController: UIViewController, DataManagerDelegate, ImageDownloadDelega
     
     //MARK:- UIScrollViewDelegate
     // Load images for all onscreen rows when scrolling is finished
-    func scrollViewDidEndDragging(scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+    override func scrollViewDidEndDragging(scrollView: UIScrollView, willDecelerate decelerate: Bool) {
         if !decelerate {
             self.loadImagesForOnscreenRows()
         }
     }
     
-    func scrollViewDidEndDecelerating(scrollView: UIScrollView) {
+    override func scrollViewDidEndDecelerating(scrollView: UIScrollView) {
         self.loadImagesForOnscreenRows()
     }
 
     //MARK:- Detail VC
-    
+    // In a storyboard-based application, you will often want to do a little preparation before navigation
+    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+        // Pass the selected object to the new view controller.
+        if segue.identifier == "MovieDetails" {
+            var dvc = segue.destinationViewController as! DetailVC
+            let row = self.tableView.indexPathForSelectedRow()?.row
+            dvc.md = self.arrMovies?.objectAtIndex(row!) as? MovieDetails
+        }
+    }
+
 }
 

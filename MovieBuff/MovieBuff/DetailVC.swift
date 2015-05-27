@@ -9,7 +9,7 @@
 import Foundation
 import UIKit
 
-class DetailVC: UITableViewController, DataManagerDelegate, ImageDownloadDelegate {
+class DetailVC: UITableViewController, ImageDownloadDelegate {
     var md: MovieDetails?
     var arrDetail: NSArray?
     var queueImg: NSOperationQueue?
@@ -33,7 +33,7 @@ class DetailVC: UITableViewController, DataManagerDelegate, ImageDownloadDelegat
         let path = NSBundle.mainBundle().pathForResource("DetailScreen", ofType: "plist")
         self.arrDetail = NSArray(contentsOfFile:path!)
         
-        let dm: MovieDetailDM = MovieDetailDM(delegate: self)
+        let dm = DataManager.sharedInstance
         let title = self.md?.title
         dm.getMovieDetail(title!)
         
