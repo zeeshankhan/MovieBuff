@@ -283,7 +283,7 @@
                                 <connections>
                                     <outlet property="imgVThumb" destination="AGO-uZ-6YV" id="JeS-bv-nWt"/>
                                     <outlet property="lblName" destination="Wo3-Qc-oxM" id="gWv-Tw-v2j"/>
-                                    <segue destination="cli-kZ-QQs" kind="show" id="KcQ-hj-eq3"/>
+                                    <segue destination="cli-kZ-QQs" kind="show" identifier="MovieDetails" id="KcQ-hj-eq3"/>
                                 </connections>
                             </tableViewCell>
                         </prototypes>

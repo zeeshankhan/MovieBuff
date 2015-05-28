@@ -15,7 +15,16 @@ class MovieDetails {
     var dicMovie: NSMutableDictionary?
 
     var title: String?
+    var movieId: String?
+    var releaseDate: String?
     var posterURL: String = ""
+    
+    var overview: String?
+    var runtime: String?
+    var status: String?
+    var genres: String?
+    var language: String?
+
     
     class func movieList(response: AnyObject) -> NSArray {
         var arr = NSMutableArray()
@@ -33,6 +42,10 @@ class MovieDetails {
     
     func initailizeMovieProperties(dicInfo:NSDictionary) {
         self.title = dicInfo.objectForKey("title") as? String
+        
+        self.movieId = dicInfo.objectForKey("id") as? String
+        self.releaseDate = dicInfo.objectForKey("release_date") as? String
+        
         let poster_path = dicInfo.objectForKey("poster_path") as? String
         if poster_path != nil {
             self.posterURL =  DataManager.sharedInstance.imgBaseUrl + poster_path!

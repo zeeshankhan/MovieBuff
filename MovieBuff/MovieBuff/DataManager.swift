@@ -45,6 +45,7 @@ class DataManager {
         // http://image.tmdb.org/t/p/w92//2DtPSyODKWXluIRV7PVru0SSzja.jpg
 
         let path = self.baseUrl + self.apiVer + "/configuration" + self.apiHolder + self.APIKey
+        NetworkManager.sharedInstance.requestQueue?.maxConcurrentOperationCount = 1
         NetworkManager.sharedInstance.requestForData(.GET, url: path, param: NSDictionary()) { response, error -> Void in
             
             if (response != nil) {
@@ -61,7 +62,9 @@ class DataManager {
                 else {
                     self.imgBaseUrl = "http://image.tmdb.org/t/p/w92"
                 }
-
+                
+                println("Configuration loaded.")
+                NetworkManager.sharedInstance.requestQueue?.maxConcurrentOperationCount = NSOperationQueueDefaultMaxConcurrentOperationCount
             }
         }
     }
