@@ -34,9 +34,9 @@ class DetailVC: UITableViewController, ImageDownloadDelegate {
         self.arrDetail = NSArray(contentsOfFile:path!)
         
         let dm = DataManager.sharedInstance
-        let title = self.md?.title
-        dm.getMovieDetail(title!)
-        
+        let id = self.md?.movieId
+        dm.getMovieDetail(id!)
+
         if self.md?.poster == nil {
             
         }

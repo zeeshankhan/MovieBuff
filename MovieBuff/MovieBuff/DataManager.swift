@@ -15,7 +15,7 @@ class DataManager {
     let baseUrl = "http://api.themoviedb.org/"
     let apiVer = "3"
     let apiHolder = "?api_key="
-    let APIKey = "433d425daefdff55eeb180ec5abfa479"
+    let APIKey = "YOUR_TMDB_KEY"
     var imgBaseUrl: String = ""
     
     class var sharedInstance: DataManager {
@@ -41,7 +41,7 @@ class DataManager {
     
     // What is backdrop in API?
     func getConfiguration() {
-        // http://api.themoviedb.org/3/configuration?api_key=433d425daefdff55eeb180ec5abfa479
+        // http://api.themoviedb.org/3/configuration?api_key=YOUR_TMDB_KEY
         // http://image.tmdb.org/t/p/w92//2DtPSyODKWXluIRV7PVru0SSzja.jpg
 
         let path = self.baseUrl + self.apiVer + "/configuration" + self.apiHolder + self.APIKey
@@ -71,7 +71,7 @@ class DataManager {
 
     
     func getMoviesList(text: String, completionBlock: CompletionHandler) {
-        // http://api.themoviedb.org/3/search/movie?api_key=433d425daefdff55eeb180ec5abfa479&query=kick
+        // http://api.themoviedb.org/3/search/movie?api_key=YOUR_TMDB_KEY&query=kick
 
         let dic: NSDictionary = NSDictionary(objects: [text], forKeys: ["query"])
         let path = self.baseUrl + self.apiVer + "/search/movie" + self.apiHolder + self.APIKey
@@ -86,7 +86,7 @@ class DataManager {
     
     
     func getMovieDetail(movieId: String) {
-        // http://api.themoviedb.org/3/movie/157336?api_key=433d425daefdff55eeb180ec5abfa479
+        // http://api.themoviedb.org/3/movie/157336?api_key=YOUR_TMDB_KEY
         
         let path = self.baseUrl + self.apiVer + "/movie/" + movieId + self.apiHolder + self.APIKey
         NetworkManager.sharedInstance.requestForData(.GET, url: path, param: NSDictionary()) { response, error -> Void in
@@ -94,7 +94,7 @@ class DataManager {
     }
     
     func getMovieCasts(movieId: String) {
-        // http://api.themoviedb.org/3/movie/157336/casts?api_key=433d425daefdff55eeb180ec5abfa479
+        // http://api.themoviedb.org/3/movie/157336/casts?api_key=YOUR_TMDB_KEY
         
         let path = self.baseUrl + self.apiVer + "/movie/" + movieId + "/casts" + self.apiHolder + self.APIKey
         NetworkManager.sharedInstance.requestForData(.GET, url: path, param: NSDictionary()) { response, error -> Void in
@@ -105,8 +105,8 @@ class DataManager {
 
 
 
-// http://api.themoviedb.org/3/genre/movie/list?api_key=433d425daefdff55eeb180ec5abfa479&id=157336
-// http://api.themoviedb.org/3/search/collection?api_key=433d425daefdff55eeb180ec5abfa479&id=157336&query=kick
+// http://api.themoviedb.org/3/genre/movie/list?api_key=YOUR_TMDB_KEY&id=157336
+// http://api.themoviedb.org/3/search/collection?api_key=YOUR_TMDB_KEY&id=157336&query=kick
 
 
 
